@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dodawanie Produktu i Kategorii</title>
+    <link rel="stylesheet" href="view/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .edit-icon {
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.3s ease-in-out;
+        }
+
+        .category:hover .edit-icon, .product:hover .edit-icon {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .add-btn {
+            color: #5e72e4;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 20px;
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            background-color: #fff;
+            padding: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.9);
+            z-index: 1001;
+        }
+
+        .popup-content button {
+            margin-top: 20px;
+            background-color: #5e72e4;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+
+<div id="add-product-btn" class="add-btn">Dodaj produkt</div>
+<div id="add-product-popup" class="popup">
+    <div class="popup-content">
+        <h2>Dodaj Produkt do Istniejącej Kategorii</h2>
+        <form id="product-form">
+            <div id="produkt">
+                <label for="product">Dodaj produkt</label>
+                <input type="text" name="product" id="product" required>
+            </div>
+            <div id="existing-category">
+                <label for="existing_category">Wybierz kategorię</label>
+                <select name="existing_category" id="existing_category" required>
+                    <option value="">-- Wybierz kategorię --</option>
+                </select>
+            </div>
+            <button type="button" onclick="sendProductData()">Wyślij produkt</button>
+        </form>
+        <div id="responseProduct"></div>
+        <button onclick="closeProductPopup()">Zamknij</button>
+    </div>
+</div>
+
+<div id="add-category-btn" class="add-btn">Dodaj kategorię</div>
+<div id="add-category-popup" class="popup">
+    <div class="popup-content">
+        <h2>Dodaj Nową Kategorię</h2>
+        <form id="category-form">
+            <div>
+                <label for="category">Dodaj nową kategorię:</label>
+                <input type="text" name="category" id="category" required>
+            </div>
+            <div>
+                <label for="parent-category">Wybierz kategorię nadrzędną:</label>
+                <select name="parent_category" id="parent-category">
+                    <option value="null">Kategoria główna</option>
+                </select>
+            </div>
+            <button type="button" onclick="addCategory()">Dodaj kategorię</button>
+        </form>
+        <div id="response-category"></div>
+        <button onclick="closeCategoryPopup()">Zamknij</button>
+    </div>
+</div>
+
+<h2>Struktura drzewa</h2>
+<label for="sort">Sortuj według:</label>
+<select id="sort" name="sort">
+    <option value="name_asc">Alfabetycznie od początku</option>
+    <option value="name_desc">Alfabetycznie od końca</option>
+    <option value="date_asc">Data rosnąco</option>
+    <option value="date_desc">Data malejąco</option>
+</select>
+
+<div class="empty-div" id="tree-view"></div>
+
+<script>
+    $(document).ready(function () {
+        loadParentCategories();
+        loadTreeView();
+
+        $('#sort').on('change', function () {
+            loadTreeView();
+        });
+    });
+
+    function loadTreeView() {
+        const sort = $('#sort').val();
+
+        $.ajax({
+            type: "GET",
+            url: "controller/get_categories_and_products.php",
+            data: { sort: sort },
+            success: function (response) {
+                const data = JSON.parse(response);
+
+                if (data.error) {
+                    $('#tree-view').html('<span>Błąd: ' + data.error + '</span>');
+                } else {
+                    renderTree(data.categories, data.products);
+                }
+            },
+            error: function (xhr, status, error) {
+                alert("Błąd w ładowaniu drzewa: " + xhr.status + " - " + error);
+            }
+        });
+    }
+
+
+    function openEditPage(type, name, id) {
+        const url = `edycja.php?type=${type}&name=${encodeURIComponent(name)}&id=${id}`;
+        window.open(url, 'Edycja', 'width=600,height=400');
+    }
+
+
+    function renderTree(categories, products) {
+        const treeView = $('#tree-view');
+        treeView.empty();
+
+        function createCategoryElement(category) {
+            let html = `
+            <li data-id="${category.id_category}" class="category">
+                ${category.name}
+                <span class="edit-icon" onclick="openEditPage('category', '${category.name}', ${category.id_category})" style="cursor: pointer;">✏️</span>
+                <ul>`;
+
+
+            if (products[category.id_category]) {
+                products[category.id_category].forEach(product => {
+                    html += `
+                    <li data-id="${product.id_product}" class="product">
+                        ${product.name}
+                        <span class="edit-icon" onclick="openEditPage('product', '${product.name}', ${product.id_product})" style="cursor: pointer;">✏️</span>
+                    </li>`;
+                });
+            }
+
+            html += `</ul></li>`;
+            return html;
+        }
+
+        function createCategoryList(parentId) {
+            let html = '<ul class="tree-list">';
+
+            categories.forEach(category => {
+                if (category.id_parent == parentId) {
+                    html += createCategoryElement(category);
+                    html += createCategoryList(category.id_category);
+                }
+            });
+
+            html += '</ul>';
+            return html;
+        }
+
+        treeView.append(createCategoryList(0));
+        loadCategoriesIntoSelect(categories);
+    }
+
+
+    function loadCategoriesIntoSelect(categories) {
+        const select = $('#existing_category');
+        select.empty();
+        select.append('<option value="">-- Wybierz kategorię --</option>');
+
+        categories.forEach(category => {
+            select.append('<option value="' + category.id_category + '">' + category.name + '</option>');
+        });
+    }
+
+    function loadParentCategories() {
+        $.ajax({
+            type: "GET",
+            url: "controller/get_categories.php",
+            success: function (response) {
+                const categories = JSON.parse(response);
+                const parentSelect = $('#parent-category');
+                parentSelect.empty();
+                parentSelect.append('<option value="null">Kategoria główna</option>');
+
+                categories.forEach(category => {
+                    parentSelect.append('<option value="' + category.id_category + '">' + category.name + '</option>');
+                });
+            }
+        });
+    }
+
+    function sendProductData() {
+        const product = $('#product').val();
+        const categoryId = $('#existing_category').val();
+
+        if (!categoryId) {
+            alert("Proszę wybrać kategorię.");
+            return;
+        }
+
+        $.ajax({
+            type: "POST",
+            url: "controller/save_product.php",
+            data: { product: product, category: categoryId },
+            success: function (response) {
+                $('#responseProduct').html(response);
+                loadTreeView();
+            },
+            error: function (xhr) {
+                alert("Błąd w dodawaniu produktu: " + xhr.status);
+            }
+        });
+    }
+
+    function addCategory() {
+        const categoryName = $('#category').val();
+        const parentCategoryId = $('#parent-category').val();
+
+        $.ajax({
+            type: "POST",
+            url: "controller/save_category.php",
+            data: { category: categoryName, parent_category: parentCategoryId },
+            success: function (response) {
+                $('#response-category').html(response);
+                loadParentCategories();
+                loadTreeView();
+            },
+            error: function (xhr) {
+                alert("Błąd w dodawaniu kategorii: " + xhr.status);
+            }
+        });
+    }
+
+    function openProductPopup() {
+        $('#add-product-popup').show();
+        createOverlay(closeProductPopup);
+    }
+
+    function closeProductPopup() {
+        $('#add-product-popup').hide();
+        removeOverlay();
+    }
+
+    function openCategoryPopup() {
+        $('#add-category-popup').show();
+        createOverlay(closeCategoryPopup);
+    }
+
+    function closeCategoryPopup() {
+        $('#add-category-popup').hide();
+        removeOverlay();
+    }
+
+    function createOverlay(onClick) {
+        const overlay = $('<div class="popup-overlay"></div>');
+        overlay.on('click', onClick);
+        $('body').append(overlay);
+    }
+
+    function removeOverlay() {
+        $('.popup-overlay').remove();
+    }
+
+    $('#add-product-btn').on('click', openProductPopup);
+    $('#add-category-btn').on('click', openCategoryPopup);
+</script>
+
+</body>
+</html>

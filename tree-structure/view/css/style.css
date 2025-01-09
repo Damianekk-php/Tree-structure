@@ -1,0 +1,102 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 20px;
+}
+
+form { 
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+    width: 250px;
+    margin-bottom: 20px;
+}
+
+label {
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+#produkt, #category {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+}
+
+input[type="text"] {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+button[type="button"] {
+    margin-top: 8px;
+    padding: 8px;
+    background-color: #5e72e4;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button[type="button"]:hover {
+    background-color: #4a5ac2;
+}
+
+button[type="button"]:focus {
+    outline: none;
+}
+
+.main-content {
+    background-color: #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+    height: 65vh;
+    margin-top: 20px;
+    padding: 20px;
+    width: 95%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-div {
+    background-color: #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 95%;
+    margin-top: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    min-height: 700px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+    font-size: 16px;
+}
+
+.some-animated-element {
+    will-change: opacity, transform;
+}
+
+.category {
+    color: rgb(65, 65, 65);
+    font-weight: bold;
+}
+
+.product {
+    font-weight: normal;
+}
+
+.toggle-button {
+    cursor: pointer;
+    font-weight: bold;
+    margin-right: 5px;
+}
